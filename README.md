@@ -57,3 +57,15 @@ Expected response:
 ```json
 {"status":"ok","timestamp":"2026-07-03T12:00:00.000000+00:00"}
 ```
+
+## Testing the Version Endpoint
+
+```bash
+curl http://localhost:8000/version
+```
+
+Expected response:
+
+```json
+{"version":"0.1.0"}
+```

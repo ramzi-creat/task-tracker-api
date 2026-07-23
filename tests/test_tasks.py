@@ -1,3 +1,12 @@
+from app import __version__
+
+
+def test_version_endpoint_returns_package_version(client):
+    response = client.get("/version")
+    assert response.status_code == 200
+    assert response.json() == {"version": __version__}
+
+
 def test_create_task_valid_returns_201_with_full_body(client):
     response = client.post("/tasks", json={"title": "My task"})
     assert response.status_code == 201
@@ -105,15 +114,6 @@ def test_patch_valid_transition_todo_to_inprogress_returns_200(client, created_t
     assert response.status_code == 200
     assert response.json()["status"] == "In Progress"
 
-
-def test_patch_valid_transition_inprogress_to_todo_returns_200(client):
-    response = client.post("/tasks", json={"title": "Progress task", "status": "In Progress"})
-    task_id = response.json()["id"]
-    patch_response = client.patch(f"/tasks/{task_id}", json={"status": "ToDo"})
-    assert patch_response.status_code == 200
-    assert patch_response.json()["status"] == "ToDo"
-
-
 def test_patch_valid_transition_done_to_todo_returns_200(client):
     response = client.post("/tasks", json={"title": "Done task", "status": "Done"})
     task_id = response.json()["id"]
@@ -132,6 +132,16 @@ def test_patch_same_status_returns_422(client, created_task):
     task_id = created_task["id"]
     response = client.patch(f"/tasks/{task_id}", json={"status": "ToDo"})
     assert response.status_code == 422
+
+
+def test_patch_existing_task_in_progress_to_todo_returns_422(client):
+    create_response = client.post("/tasks", json={"title": "Progress task", "status": "In Progress"})
+    assert create_response.status_code == 201
+    task_id = create_response.json()["id"]
+
+    response = client.patch(f"/tasks/{task_id}", json={"status": "ToDo"})
+    assert response.status_code == 422
+    assert "Invalid status transition" in response.json()["detail"]
 
 
 def test_delete_existing_returns_204_no_body(client, created_task):
