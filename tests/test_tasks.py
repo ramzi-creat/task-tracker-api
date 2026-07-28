@@ -114,6 +114,7 @@ def test_patch_valid_transition_todo_to_inprogress_returns_200(client, created_t
     assert response.status_code == 200
     assert response.json()["status"] == "In Progress"
 
+
 def test_patch_valid_transition_done_to_todo_returns_200(client):
     response = client.post("/tasks", json={"title": "Done task", "status": "Done"})
     task_id = response.json()["id"]
@@ -153,3 +154,57 @@ def test_delete_existing_returns_204_no_body(client, created_task):
 def test_delete_missing_returns_404(client):
     response = client.delete("/tasks/missing-id")
     assert response.status_code == 404
+
+
+# --- NEW TESTS FOR FEATURE 1 & 2 (Due Dates & Tags) ---
+
+def test_create_task_with_due_date_and_tags(client):
+    response = client.post(
+        "/tasks",
+        json={
+            "title": "Task with due date and tags",
+            "due_date": "2026-12-31",
+            "tags": ["backend", "urgent"]
+        }
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert data["due_date"] == "2026-12-31"
+    assert "backend" in data["tags"]
+    assert "urgent" in data["tags"]
+
+
+def test_list_tasks_filter_by_tag(client):
+    client.post(
+        "/tasks",
+        json={"title": "Feature Task", "tags": ["feature"]}
+    )
+    response = client.get("/tasks?tag=feature")
+    assert response.status_code == 200
+    tasks = response.json()
+    assert len(tasks) == 1
+    assert "feature" in tasks[0]["tags"]
+
+
+def test_list_tasks_filter_overdue(client):
+    client.post(
+        "/tasks",
+        json={"title": "Old Task", "due_date": "2020-01-01", "status": "ToDo"}
+    )
+    response = client.get("/tasks?overdue=true")
+    assert response.status_code == 200
+    tasks = response.json()
+    assert len(tasks) >= 1
+
+
+def test_tag_normalization(client):
+    response = client.post(
+        "/tasks",
+        json={
+            "title": "Normalization test",
+            "tags": ["  Spaces  ", "UPPERCASE"]
+        }
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert "Spaces" in data["tags"] or "spaces" in [t.lower() for t in data["tags"]]
