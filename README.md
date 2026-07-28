@@ -69,3 +69,13 @@ Expected response:
 ```json
 {"version":"0.1.0"}
 ```
+## Getting Started & Running the Project
+
+### Prerequisites
+* Python 3.10+
+* Virtual environment (`venv`) activated
+
+### 1. Run the Backend
+Start the FastAPI server using Uvicorn:
+```powershell
+uvicorn app.main:app --reload

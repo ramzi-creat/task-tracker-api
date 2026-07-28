@@ -66,8 +66,7 @@ async def get_all_tasks(status: str = None, priority: str = None):
     """Retrieve all tasks from the storage backend."""
     return storage.get_all_tasks(status=status, priority=priority)
 
-
-@app.get("/tasks/{task_id}", response_model=TaskResponse, tags=["tasks"])
+@app.get("/tasks/{task_id}", response_model=TaskResponse, tags=["Tasks"])
 def get_task(task_id: str) -> TaskResponse:
     task = storage.get_task_by_id(task_id)
     if task is None:
