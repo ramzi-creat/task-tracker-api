@@ -1,81 +1,19 @@
-# Task Tracker API
+# Task Tracker API - Mid-Course Project
 
-A simple RESTful API for creating, viewing, updating, and deleting tasks, built with Python and FastAPI. This is a learning project that uses in-memory storage (per ADR-001) rather than a database, keeping the setup minimal and easy to run locally.
+A robust FastAPI task management application featuring priority management, status normalization, due date tracking, overdue filtering, and task tagging.
 
-## Setup
+## Features
+1. **Task CRUD Operations:** Create, read, update, and delete tasks with strict validation.
+2. **Due Dates & Overdue Status:** Assign due dates to tasks and track overdue status automatically.
+3. **Tags & Filtering:** Add multiple tags to tasks and filter them dynamically via query parameters.
+4. **Robust Testing:** Comprehensive test suite built with `pytest`.
+
+## Setup & Running the Project
 
 ### 1. Create a virtual environment and install dependencies
 
-**Linux/macOS (bash)**
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-**Windows (PowerShell)**
-
-```powershell
-python -m venv venv
-.\venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
-
-### 2. Configure environment variables
-
-Copy `.env.example` to `.env` and adjust values if needed:
-
-**Linux/macOS**
-```bash
-cp .env.example .env
-```
-
 **Windows (PowerShell)**
 ```powershell
-Copy-Item .env.example .env
-```
-
-## Running the Server
-
-Start the server with Uvicorn:
-
-```bash
-uvicorn app.main:app --reload
-```
-
-The API will be available at `http://localhost:8000`, and interactive docs at `http://localhost:8000/docs`.
-
-## Testing the Health Endpoint
-
-```bash
-curl http://localhost:8000/health
-```
-
-Expected response:
-
-```json
-{"status":"ok","timestamp":"2026-07-03T12:00:00.000000+00:00"}
-```
-
-## Testing the Version Endpoint
-
-```bash
-curl http://localhost:8000/version
-```
-
-Expected response:
-
-```json
-{"version":"0.1.0"}
-```
-## Getting Started & Running the Project
-
-### Prerequisites
-* Python 3.10+
-* Virtual environment (`venv`) activated
-
-### 1. Run the Backend
-Start the FastAPI server using Uvicorn:
-```powershell
-uvicorn app.main:app --reload
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt

@@ -1,8 +1,7 @@
 from pydantic import BaseModel, Field, ConfigDict, field_validator
-from typing import Optional
+from typing import Optional, List
 from enum import Enum
 from datetime import date
-from typing import Optional, List
 
 
 class TaskStatus(str, Enum):
@@ -44,6 +43,8 @@ class TaskCreate(StrictBaseModel):
     status: TaskStatus = TaskStatus.TODO
     priority: TaskPriority = TaskPriority.MEDIUM
     assignee: Optional[str] = None
+    due_date: Optional[date] = None
+    tags: List[str] = Field(default_factory=list)
 
     @field_validator("status", mode="before")
     @classmethod
@@ -53,9 +54,19 @@ class TaskCreate(StrictBaseModel):
     @field_validator("title")
     @classmethod
     def title_must_not_be_whitespace(cls, v: str) -> str:
-        if not v.strip():
+        if not v or not v.strip():
             raise ValueError("Title cannot be empty whitespace")
         return v
+
+    @field_validator("tags", mode="before")
+    @classmethod
+    def normalize_tags(cls, v):
+        if v is None:
+            return []
+        if isinstance(v, str):
+            return [tag.strip() for tag in v.split(",") if tag.strip()]
+        return [str(tag).strip() for tag in v if str(tag).strip()]
+
 
 class TaskResponse(BaseModel):
     id: str
@@ -73,6 +84,7 @@ class HealthResponse(BaseModel):
     status: str
     timestamp: str
 
+
 class TaskUpdate(StrictBaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = None
@@ -82,6 +94,15 @@ class TaskUpdate(StrictBaseModel):
     completed: Optional[bool] = None
     due_date: Optional[date] = None
     tags: Optional[List[str]] = None
+
+    @field_validator("title", mode="before")
+    @classmethod
+    def title_must_not_be_none_or_empty(cls, v):
+        if v is None:
+            raise ValueError("Title cannot be null")
+        if isinstance(v, str) and not v.strip():
+            raise ValueError("Title cannot be empty whitespace")
+        return v
 
     @field_validator("status", mode="before")
     @classmethod
@@ -95,36 +116,6 @@ class TaskUpdate(StrictBaseModel):
     def normalize_tags(cls, v):
         if v is None:
             return None
-        if isinstance(v, str):
-            return [tag.strip() for tag in v.split(",") if tag.strip()]
-        return [str(tag).strip() for tag in v if str(tag).strip()]
-
-class TaskCreate(StrictBaseModel):
-    title: str = Field(..., min_length=1, max_length=200)
-    description: Optional[str] = ""
-    status: TaskStatus = TaskStatus.TODO
-    priority: TaskPriority = TaskPriority.MEDIUM
-    assignee: Optional[str] = None
-    due_date: Optional[date] = None
-    tags: List[str] = Field(default_factory=list)
-
-    @field_validator("status", mode="before")
-    @classmethod
-    def normalize_status(cls, value):
-        return TaskStatus.normalize(value)
-
-    @field_validator("title")
-    @classmethod
-    def title_must_not_be_whitespace(cls, v: str) -> str:
-        if not v.strip():
-            raise ValueError("Title cannot be empty whitespace")
-        return v
-
-    @field_validator("tags", mode="before")
-    @classmethod
-    def normalize_tags(cls, v):
-        if v is None:
-            return []
         if isinstance(v, str):
             return [tag.strip() for tag in v.split(",") if tag.strip()]
         return [str(tag).strip() for tag in v if str(tag).strip()]

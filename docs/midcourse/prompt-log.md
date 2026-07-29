@@ -11,3 +11,12 @@
 - **Prompt 3:** "How do I add an HTML date picker input and an overdue pill badge to the frontend HTML/JS?"
   - *AI Output:* Suggested `<input type="date">` in the modal form and a conditional CSS/JS badge render.
   - *Action:* Accepted and edited to match existing DOM element IDs.
+
+## Feature 2: Task Tagging & Filtering
+- **Prompt 1 (Weak):** "How do I add tags to tasks?"
+  - *Rewritten Strong Prompt:* "How do I implement a list of string tags (`tags: List[str] = []`) in a Pydantic model and support tag-based query filtering in a FastAPI router endpoint?"
+  - *AI Output:* Provided a FastAPI query parameter implementation using `tags: Optional[str] = Query(None)` and filtering list comprehension logic.
+  - *Action:* Integrated into the router and data models.
+- **Prompt 2:** "How do I let users select tags on the frontend interface?"
+  - *AI Output:* Suggested text input or comma-separated tag input fields in the task form.
+  - *Action:* Accepted and added to the frontend task creation/edit modal.
