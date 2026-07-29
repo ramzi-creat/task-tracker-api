@@ -23,3 +23,6 @@
 - **Prompt 3:** "The tag filter test is too weak because it only creates one task and checks if it returns. Add a negative test case that creates a second task with a different tag to ensure it gets correctly filtered out."
   - *AI Output:* Provided the updated test implementation using multiple tasks with different tags to ensure strict filtering validation.
   - *Action:* Accepted and integrated into `tests/test_tasks.py`.
+- **Prompt 4:** "How should the tag filter behave when a task has multiple tags and the request targets one of them?"
+  - *AI Output:* Recommended returning the task when any tag matches and ensuring unrelated tags do not cause false positives.
+  - *Action:* Documented as the expected behavior and reflected in the strengthened test cases.

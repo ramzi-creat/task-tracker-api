@@ -18,6 +18,7 @@ from app.business_rules import validate_status_transition
 from app.config import APP_ENV, PORT
 from app.models import HealthResponse, TaskCreate, TaskResponse, TaskUpdate
 from app import storage, __version__
+from fastapi import Query
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -72,15 +73,34 @@ def create_task(payload: TaskCreate) -> TaskResponse:
     return storage.add_task(payload)
 
 
+def _parse_bool_query_param(value: Optional[str]) -> Optional[bool]:
+    if value is None:
+        return None
+    normalized = value.strip().lower()
+    if normalized in {"1", "true", "t", "yes", "y", "on"}:
+        return True
+    if normalized in {"0", "false", "f", "no", "n", "off"}:
+        return False
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail="Invalid value for overdue query parameter; expected true or false",
+    )
+
+
 @app.get("/tasks", response_model=List[TaskResponse], tags=["Tasks"])
 async def get_all_tasks(
-    status: Optional[str] = None, 
-    priority: Optional[str] = None,
-    tag: Optional[str] = None,
-    overdue: Optional[bool] = None,
+    status: Optional[str] = Query(None, description="Filter tasks by status"),
+    priority: Optional[str] = Query(None, description="Filter tasks by priority"),
+    tag: Optional[str] = Query(None, description="Filter tasks by tag"),
+    overdue: Optional[str] = Query(None, description="Filter tasks by overdue status"),
 ):
     """Retrieve all tasks from the storage backend with optional filters."""
-    return storage.get_all_tasks(status=status, priority=priority, tag=tag, overdue=overdue)
+    return storage.get_all_tasks(
+        status=status,
+        priority=priority,
+        tag=tag,
+        overdue=_parse_bool_query_param(overdue),
+    )
 
 
 @app.get("/tasks/{task_id}", response_model=TaskResponse, tags=["Tasks"])

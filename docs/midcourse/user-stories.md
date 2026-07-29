@@ -10,6 +10,7 @@
   - *Acceptance Criteria:*
     - Tasks past their due date display an overdue pill/indicator on the Kanban UI.
     - An overdue filter option allows viewing only overdue tasks.
+- **AI Assumption Corrected:** The original assumption was that overdue logic could be based only on the due date. That was corrected so overdue checks now require the task to be both past due and not completed, preventing completed tasks from appearing in overdue results.
 
 ## Feature 2: Task Tagging & Filtering
 - **Story 1:** As a user, I want to add tags to my tasks so that I can categorize and group related work.
@@ -20,9 +21,12 @@
   - *Acceptance Criteria:*
     - The API supports query parameters to filter tasks by tag.
     - The UI allows selecting tags to filter the task list.
+- **AI Assumption Corrected:** The original assumption was that tag filtering should be case-sensitive and only match an exact tag string. That was corrected so filtering is case-insensitive and matches tasks that include the requested tag within a normalized list of tags.
 
 ---
 
 ## AI Assumption & Correction Log
-- **AI Assumption:** Initially, the AI assumed that filtering tasks by overdue status (`?overdue=true`) only needed to check if `due_date < today`, ignoring the task's completion status. 
-- **Correction:** I corrected this assumption because completed tasks (status `"Done"`) should never be flagged or returned as overdue, even if their past due date has passed. I updated the filtering logic to explicitly require `task.status != "Done"` alongside the date check.
+- **Feature 1 Assumption:** Initially, the AI assumed that filtering tasks by overdue status (`?overdue=true`) only needed to check if `due_date < today`, ignoring the task's completion status.
+- **Feature 1 Correction:** I corrected this assumption because completed tasks (status `"Done"`) should never be flagged or returned as overdue, even if their past due date has passed. I updated the filtering logic to explicitly require `task.status != "Done"` alongside the date check.
+- **Feature 2 Assumption:** Initially, the AI assumed tag filtering could rely on exact string matching with the original capitalization.
+- **Feature 2 Correction:** I corrected this assumption so tag filtering is case-insensitive and returns all tasks containing the requested tag in a normalized tag list.

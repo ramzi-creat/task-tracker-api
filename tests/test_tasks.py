@@ -175,50 +175,39 @@ def test_create_task_with_due_date_and_tags(client):
 
 
 def test_list_tasks_filter_by_tag(client):
-    client.post(
-        "/tasks",
-        json={"title": "Feature Task", "tags": ["feature"]}
-    )
-    response = client.get("/tasks?tag=feature")
+    client.post("/tasks", json={"title": "Task with Python Tag", "tags": ["python"]})
+    client.post("/tasks", json={"title": "Task with JS Tag", "tags": ["javascript"]})
+    client.post("/tasks", json={"title": "Task with Python and Backend", "tags": ["python", "backend"]})
+
+    response = client.get("/tasks", params={"tag": "python"})
     assert response.status_code == 200
-    tasks = response.json()
-    assert len(tasks) == 1
-    assert "feature" in tasks[0]["tags"]
+    data = response.json()
+
+    assert len(data) == 2
+    assert {task["title"] for task in data} == {"Task with Python Tag", "Task with Python and Backend"}
+    assert all("python" in task["tags"] for task in data)
 
 from datetime import date, timedelta
+
 
 def test_list_tasks_filter_overdue(client):
     today = date.today()
     past_date = (today - timedelta(days=5)).isoformat()
     future_date = (today + timedelta(days=5)).isoformat()
 
-    # Create an overdue task (past due date, status ToDo)
-    client.post("/tasks", json={
-        "title": "Overdue Task", 
-        "due_date": past_date, 
-        "status": "ToDo"
-    })
-    # Create a task that is NOT overdue (future due date)
-    client.post("/tasks", json={
-        "title": "Future Task", 
-        "due_date": future_date, 
-        "status": "ToDo"
-    })
-    # Create an overdue-looking task that is already Done (should be excluded)
-    client.post("/tasks", json={
-        "title": "Completed Past Task", 
-        "due_date": past_date, 
-        "status": "Done"
-    })
+    client.post("/tasks", json={"title": "Overdue Task", "due_date": past_date, "status": "ToDo"})
+    client.post("/tasks", json={"title": "Also Overdue", "due_date": past_date, "status": "ToDo"})
+    client.post("/tasks", json={"title": "Future Task", "due_date": future_date, "status": "ToDo"})
+    client.post("/tasks", json={"title": "Completed Past Task", "due_date": past_date, "status": "Done"})
 
-    # Fetch tasks with overdue=true
-    response = client.get("/tasks?overdue=true")
+    response = client.get("/tasks", params={"overdue": "true"})
     assert response.status_code == 200
     data = response.json()
 
-    # Assert that ONLY the genuinely overdue, non-completed task is returned
-    assert len(data) == 1
-    assert data[0]["title"] == "Overdue Task"
+    assert len(data) == 2
+    assert {task["title"] for task in data} == {"Overdue Task", "Also Overdue"}
+    assert all(task["status"] != "Done" for task in data)
+    assert all(task["due_date"] is not None and task["due_date"] < today.isoformat() for task in data)
 
 
 def test_tag_normalization(client):
@@ -233,23 +222,8 @@ def test_tag_normalization(client):
     data = response.json()
     assert "Spaces" in data["tags"] or "spaces" in [t.lower() for t in data["tags"]]
 
+
 def test_update_task_null_title_returns_422(client, created_task):
     task_id = created_task["id"]
     response = client.patch(f"/tasks/{task_id}", json={"title": None})
     assert response.status_code == 422
-
-def test_list_tasks_filter_by_tag(client):
-    # Create one task with the target tag
-    client.post("/tasks", json={"title": "Task with Python Tag", "tags": ["python"]})
-    # Create another task with a different tag that should be filtered out
-    client.post("/tasks", json={"title": "Task with JS Tag", "tags": ["javascript"]})
-
-    # Fetch tasks filtered by the target tag
-    response = client.get("/tasks?tag=python")
-    assert response.status_code == 200
-    data = response.json()
-    
-    # Assert that ONLY the matching task is returned
-    assert len(data) == 1
-    assert data[0]["title"] == "Task with Python Tag"
-    assert "python" in data[0]["tags"]

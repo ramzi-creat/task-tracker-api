@@ -46,12 +46,14 @@ def get_all_tasks(status=None, priority=None, overdue: Optional[bool] = None, ta
             
     # Filter by specific tag
     if tag is not None:
-        tag_lower = tag.strip().lower()
-        tasks = [
-            task for task in tasks 
-            if task.tags and any(t.lower() == tag_lower for t in task.tags)
-        ]
-        
+        tag = tag.strip()
+        if tag:
+            tag_lower = tag.lower()
+            tasks = [
+                task for task in tasks 
+                if task.tags and any(t.lower() == tag_lower for t in task.tags)
+            ]
+
     return tasks
 
 
