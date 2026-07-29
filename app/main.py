@@ -1,7 +1,8 @@
 # main.py
 from datetime import datetime, timezone
-from typing import List
+from typing import List, Optional
 import importlib
+from contextlib import asynccontextmanager
 
 try:
     fastapi = importlib.import_module("fastapi")
@@ -19,10 +20,20 @@ from app.models import HealthResponse, TaskCreate, TaskResponse, TaskUpdate
 from app import storage, __version__
 from fastapi.middleware.cors import CORSMiddleware
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup actions
+    print(f"[startup] APP_ENV={APP_ENV} PORT={PORT}")
+    yield
+    # Shutdown actions (if any)
+
+
 app = FastAPI(
     title="Task Tracker API",
     version=__version__,
     description="A learning-focused REST API built with FastAPI and JSON file storage.",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -62,9 +73,15 @@ def create_task(payload: TaskCreate) -> TaskResponse:
 
 
 @app.get("/tasks", response_model=List[TaskResponse], tags=["Tasks"])
-async def get_all_tasks(status: str = None, priority: str = None):
-    """Retrieve all tasks from the storage backend."""
-    return storage.get_all_tasks(status=status, priority=priority)
+async def get_all_tasks(
+    status: Optional[str] = None, 
+    priority: Optional[str] = None,
+    tag: Optional[str] = None,
+    overdue: Optional[bool] = None,
+):
+    """Retrieve all tasks from the storage backend with optional filters."""
+    return storage.get_all_tasks(status=status, priority=priority, tag=tag, overdue=overdue)
+
 
 @app.get("/tasks/{task_id}", response_model=TaskResponse, tags=["Tasks"])
 def get_task(task_id: str) -> TaskResponse:
@@ -83,7 +100,6 @@ def patch_task(task_id: str, payload: TaskUpdate) -> TaskResponse:
     updates = payload.model_dump(exclude_unset=True)
 
     if payload.status is not None:
-        # Added check to fail the specific test requirement
         if existing.status == "In Progress" and payload.status == "ToDo":
             raise HTTPException(
                 status_code=422,
@@ -97,26 +113,26 @@ def patch_task(task_id: str, payload: TaskUpdate) -> TaskResponse:
 
     updated_task = storage.update_task(task_id, payload)
     if updated_task is None:
-        raise HTTPException(status_code=404, detail=f"Task with id {task_id} not found")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, 
+            detail=f"Task with id {task_id} not found"
+        )
     return updated_task
 
 
 @app.put("/tasks/{task_id}", response_model=TaskResponse, tags=["tasks"])
 def update_task(task_id: str, payload: TaskUpdate) -> TaskResponse:
-    # 1. Fetch the existing task
     existing_task = storage.get_task_by_id(task_id)
     if existing_task is None:
         raise HTTPException(status_code=404, detail=f"Task with id {task_id} not found")
     
-    # 2. ONLY validate if a status is actually being changed
     if payload.status is not None:
-        # Check if the status is actually changing to avoid redundancy
         if existing_task.status != payload.status:
             validate_status_transition(existing_task.status, payload.status)
     
-    # 3. Update and return the task
     updated_task = storage.update_task(task_id, payload)
     return updated_task
+
 
 @app.delete("/tasks/{task_id}", status_code=204, tags=["Tasks"])
 async def delete_task(task_id: str):
@@ -128,12 +144,6 @@ async def delete_task(task_id: str):
 
 
 if __name__ == "__main__":
-    import importlib
     uvicorn = importlib.import_module("uvicorn")
     print(f"Starting Task Tracker API in '{APP_ENV}' mode on port {PORT}...")
     uvicorn.run("app.main:app", host="0.0.0.0", port=PORT, reload=True)
-
-@app.on_event("startup")
-async def on_startup() -> None:
-    print(f"[startup] APP_ENV={APP_ENV} PORT={PORT}")
-

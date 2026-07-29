@@ -20,3 +20,6 @@
 - **Prompt 2:** "How do I let users select tags on the frontend interface?"
   - *AI Output:* Suggested text input or comma-separated tag input fields in the task form.
   - *Action:* Accepted and added to the frontend task creation/edit modal.
+- **Prompt 3:** "The tag filter test is too weak because it only creates one task and checks if it returns. Add a negative test case that creates a second task with a different tag to ensure it gets correctly filtered out."
+  - *AI Output:* Provided the updated test implementation using multiple tasks with different tags to ensure strict filtering validation.
+  - *Action:* Accepted and integrated into `tests/test_tasks.py`.

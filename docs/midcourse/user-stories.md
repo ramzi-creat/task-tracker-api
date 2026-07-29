@@ -20,3 +20,9 @@
   - *Acceptance Criteria:*
     - The API supports query parameters to filter tasks by tag.
     - The UI allows selecting tags to filter the task list.
+
+---
+
+## AI Assumption & Correction Log
+- **AI Assumption:** Initially, the AI assumed that filtering tasks by overdue status (`?overdue=true`) only needed to check if `due_date < today`, ignoring the task's completion status. 
+- **Correction:** I corrected this assumption because completed tasks (status `"Done"`) should never be flagged or returned as overdue, even if their past due date has passed. I updated the filtering logic to explicitly require `task.status != "Done"` alongside the date check.
