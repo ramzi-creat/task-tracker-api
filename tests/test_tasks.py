@@ -208,3 +208,8 @@ def test_tag_normalization(client):
     assert response.status_code == 201
     data = response.json()
     assert "Spaces" in data["tags"] or "spaces" in [t.lower() for t in data["tags"]]
+
+def test_update_task_null_title_returns_422(client, created_task):
+    task_id = created_task["id"]
+    response = client.patch(f"/tasks/{task_id}", json={"title": None})
+    assert response.status_code == 422
