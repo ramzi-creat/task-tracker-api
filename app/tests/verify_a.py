@@ -2,6 +2,18 @@ from app.models.schemas import TaskCreate, TaskUpdate
 from pydantic import ValidationError
 
 def expect_fail(test_name, lambda_func):
+    """Run a function and report success when it raises ValidationError.
+
+    Args:
+        test_name: The descriptive name of the validation scenario.
+        lambda_func: The callable that should fail validation.
+
+    Returns:
+        None: The function prints the verification result.
+
+    Raises:
+        None.
+    """
     try:
         lambda_func()
         print(f"FAIL: {test_name} (Expected validation to fail, but it passed)")
@@ -11,6 +23,18 @@ def expect_fail(test_name, lambda_func):
         print(f"FAIL: {test_name} (Unexpected error: {e})")
 
 def verify_success(test_name, lambda_func):
+    """Run a function and report success when it completes without raising.
+
+    Args:
+        test_name: The descriptive name of the scenario.
+        lambda_func: The callable that should complete successfully.
+
+    Returns:
+        None: The function prints the verification result.
+
+    Raises:
+        None.
+    """
     try:
         lambda_func()
         print(f"PASS: {test_name}")

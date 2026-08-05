@@ -227,3 +227,18 @@ def test_update_task_null_title_returns_422(client, created_task):
     task_id = created_task["id"]
     response = client.patch(f"/tasks/{task_id}", json={"title": None})
     assert response.status_code == 422
+
+
+def test_put_missing_task_returns_404(client):
+    response = client.put("/tasks/missing-id", json={"title": "Replacement title"})
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Task with id missing-id not found"
+
+
+def test_list_tasks_filter_by_status_is_case_insensitive(client):
+    client.post("/tasks", json={"title": "Lowercase status task", "status": "ToDo"})
+
+    response = client.get("/tasks", params={"status": "todo"})
+    assert response.status_code == 200
+    data = response.json()
+    assert any(task["title"] == "Lowercase status task" for task in data)
