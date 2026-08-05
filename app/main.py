@@ -24,6 +24,17 @@ from fastapi.middleware.cors import CORSMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """Handle startup and shutdown hooks for the FastAPI application.
+
+    Args:
+        app: The FastAPI application instance.
+
+    Returns:
+        AsyncIterator[None]: A context manager that yields once during startup.
+
+    Raises:
+        None.
+    """
     # Startup actions
     print(f"[startup] APP_ENV={APP_ENV} PORT={PORT}")
     yield
@@ -53,7 +64,20 @@ app.add_middleware(
 
 @app.get("/health", response_model=HealthResponse, status_code=200, tags=["Health"])
 async def health_check() -> HealthResponse:
-    """Returns the service status and the current UTC timestamp."""
+    """Return the service health status and current UTC timestamp.
+
+    Args:
+        None.
+
+    Returns:
+        HealthResponse: A response object containing the status and timestamp.
+
+    Raises:
+        None.
+
+    Example:
+        GET /health
+    """
     return HealthResponse(
         status="ok",
         timestamp=datetime.now(timezone.utc).isoformat(),
@@ -62,7 +86,20 @@ async def health_check() -> HealthResponse:
 
 @app.get("/version", status_code=200, tags=["Health"])
 async def version_check():
-    """Returns the package version."""
+    """Return the package version.
+
+    Args:
+        None.
+
+    Returns:
+        dict[str, str]: A dictionary containing the package version.
+
+    Raises:
+        None.
+
+    Example:
+        GET /version
+    """
     return {"version": __version__}
 
 
@@ -70,6 +107,20 @@ async def version_check():
 
 @app.post("/tasks", response_model=TaskResponse, status_code=status.HTTP_201_CREATED, tags=["tasks"])
 def create_task(payload: TaskCreate) -> TaskResponse:
+    """Create a new task from the provided payload.
+
+    Args:
+        payload: The task data used to create the new task.
+
+    Returns:
+        TaskResponse: The newly created task including an assigned id.
+
+    Raises:
+        None.
+
+    Example:
+        POST /tasks
+    """
     return storage.add_task(payload)
 
 
@@ -94,7 +145,23 @@ async def get_all_tasks(
     tag: Optional[str] = Query(None, description="Filter tasks by tag"),
     overdue: Optional[str] = Query(None, description="Filter tasks by overdue status"),
 ):
-    """Retrieve all tasks from the storage backend with optional filters."""
+    """Return tasks, optionally filtered by status, priority, tag, or overdue.
+
+    Args:
+        status: Optional status filter value.
+        priority: Optional priority filter value.
+        tag: Optional tag name used to match task tags.
+        overdue: Optional boolean-like string used to filter by overdue status.
+
+    Returns:
+        list[TaskResponse]: A list of tasks matching the requested filters.
+
+    Raises:
+        HTTPException: 422 if the overdue query parameter is not a valid boolean-like value.
+
+    Example:
+        GET /tasks?status=ToDo&overdue=true
+    """
     return storage.get_all_tasks(
         status=status,
         priority=priority,
@@ -105,6 +172,20 @@ async def get_all_tasks(
 
 @app.get("/tasks/{task_id}", response_model=TaskResponse, tags=["Tasks"])
 def get_task(task_id: str) -> TaskResponse:
+    """Return a task by its identifier.
+
+    Args:
+        task_id: The unique task identifier.
+
+    Returns:
+        TaskResponse: The matching task.
+
+    Raises:
+        HTTPException: 404 if no task exists for the provided id.
+
+    Example:
+        GET /tasks/{task_id}
+    """
     task = storage.get_task_by_id(task_id)
     if task is None:
         raise HTTPException(status_code=404, detail=f"Task with id {task_id} not found")
@@ -113,6 +194,22 @@ def get_task(task_id: str) -> TaskResponse:
 
 @app.patch("/tasks/{task_id}", response_model=TaskResponse, tags=["tasks"])
 def patch_task(task_id: str, payload: TaskUpdate) -> TaskResponse:
+    """Apply partial task updates to an existing task.
+
+    Args:
+        task_id: The unique task identifier.
+        payload: The partial update payload for the task.
+
+    Returns:
+        TaskResponse: The updated task.
+
+    Raises:
+        HTTPException: 404 if no task exists for the provided id.
+        HTTPException: 422 if the status transition is invalid or the task already has the requested status.
+
+    Example:
+        PATCH /tasks/{task_id}
+    """
     existing = storage.get_task_by_id(task_id)
     if existing is None:
         raise HTTPException(status_code=404, detail=f"Task with id {task_id} not found")
@@ -122,7 +219,7 @@ def patch_task(task_id: str, payload: TaskUpdate) -> TaskResponse:
     if payload.status is not None:
         if existing.status == "In Progress" and payload.status == "ToDo":
             raise HTTPException(
-                status_code=422,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail="Invalid status transition: Cannot move task from In Progress back to ToDo",
             )
 
@@ -142,6 +239,22 @@ def patch_task(task_id: str, payload: TaskUpdate) -> TaskResponse:
 
 @app.put("/tasks/{task_id}", response_model=TaskResponse, tags=["tasks"])
 def update_task(task_id: str, payload: TaskUpdate) -> TaskResponse:
+    """Replace the stored task data with the provided update payload.
+
+    Args:
+        task_id: The unique task identifier.
+        payload: The full update payload for the task.
+
+    Returns:
+        TaskResponse: The updated task.
+
+    Raises:
+        HTTPException: 404 if no task exists for the provided id.
+        HTTPException: 422 if the requested status transition is invalid.
+
+    Example:
+        PUT /tasks/{task_id}
+    """
     existing_task = storage.get_task_by_id(task_id)
     if existing_task is None:
         raise HTTPException(status_code=404, detail=f"Task with id {task_id} not found")
@@ -156,7 +269,20 @@ def update_task(task_id: str, payload: TaskUpdate) -> TaskResponse:
 
 @app.delete("/tasks/{task_id}", status_code=204, tags=["Tasks"])
 async def delete_task(task_id: str):
-    """Delete a task from the storage backend."""
+    """Delete a task by its identifier.
+
+    Args:
+        task_id: The unique task identifier.
+
+    Returns:
+        None: The endpoint returns no response body on success.
+
+    Raises:
+        HTTPException: 404 if no task exists for the provided id.
+
+    Example:
+        DELETE /tasks/{task_id}
+    """
     success = storage.delete_task(task_id)
     if not success:
         raise HTTPException(status_code=404, detail="Task not found")

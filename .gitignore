@@ -6,6 +6,9 @@ __pycache__/
 # Environment variables
 .env
 
+# Runtime data
+tasks.json
+
 # Virtual environment
 venv/
 env/
